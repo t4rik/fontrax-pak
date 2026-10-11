@@ -129,7 +129,7 @@ exportExtensionMapping = {v: k for k, v in exportFileTypesMapping.items()}
 
 openFontFilter = f"Fonts ({' '.join(f'*{ext}' for ext in sorted(fileExtensions))})"
 
-latestReleasePageURL = "https://github.com/fontra/fontra-pak/releases/latest"
+latestReleasePageURL = "https://github.com/t4rik/fontrax-pak/releases/latest"
 
 
 def runningAsFlatpak() -> bool:
@@ -157,7 +157,7 @@ def openURL(url):
                 os.environ[name] = value
 
 
-applicationSettings = QSettings("xyz.fontra", "FontraPak")
+applicationSettings = QSettings("io.github.t4rik", "FontraXPak")
 
 
 class FontraApplication(QApplication):
@@ -592,7 +592,7 @@ def fetchLatestReleaseInfo() -> tuple[str, str | None]:
 
 
 def _fetchLatestReleaseInfo() -> tuple[str, str | None]:
-    url = "https://api.github.com/repos/fontra/fontra-pak/releases/latest"
+    url = "https://api.github.com/repos/t4rik/fontrax-pak/releases/latest"
     response = urlopen(url)
     latestRelease = json.loads(response.read().decode("utf-8"))
     latestVersion = latestRelease["tag_name"]

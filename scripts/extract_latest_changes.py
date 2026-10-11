@@ -9,7 +9,7 @@ def getLatestChanges(text):
 
 
 changeLogURL = (
-    "https://raw.githubusercontent.com/fontra/fontra/refs/heads/main/CHANGELOG.md"
+    "https://raw.githubusercontent.com/t4rik/fontrax/refs/heads/main/CHANGELOG.md"
 )
 
 changeLogText = downloadResource(changeLogURL)

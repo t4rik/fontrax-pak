@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_ID="xyz.fontra.FontraPak.Native"
+APP_ID="io.github.t4rik.FontraXPak.Native"
 APP_NAME="Fontra Pak"
 
 PREFIX="${PREFIX:-$HOME/.local}"

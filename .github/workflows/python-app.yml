@@ -1,9 +1,6 @@
 name: Build Application
 
 on:
-  schedule:
-    # * is a special character in YAML so you have to quote this string
-    - cron: "21 1 * * 1"
   workflow_dispatch: # allow manual trigger
   push:
     tags:
@@ -16,11 +13,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-latest
-            NAME: MacOS
-
-          - os: windows-latest
-            NAME: Windows
 
           - os: ubuntu-22.04
             NAME: Ubuntu
@@ -124,96 +116,13 @@ jobs:
             ./dist/*.exe
             ./dist/*.tgz
 
-  windows-installer:
-    needs: build-application
-    runs-on: windows-latest
-    outputs:
-      artifact-id: ${{ steps.upload-unsigned-windows.outputs.artifact-id }}
-
-    steps:
-      - name: Git checkout
-        uses: actions/checkout@v7
-
-      - name: Extract version from tag
-        if: github.ref_type == 'tag'
-        run: echo "VERSION=${{ github.ref_name }}" >> $env:GITHUB_ENV
-
-      - name: Set dev version
-        if: github.ref_type != 'tag'
-        run: echo "VERSION=0.0.0" >> $env:GITHUB_ENV
-
-      - name: Download Windows exe
-        uses: actions/download-artifact@v8
-        with:
-          name: FontraPak-Windows
-          path: dist
-
-      - name: Install WiX v6
-        run: dotnet tool install --global wix --version 6.0.2
-
-      - name: Add WiX UI extension
-        run: wix extension add --global WixToolset.UI.wixext/6.0.2
-
-      - name: Compile MSI
-        run: |
-          Set-Location windows
-          wix build Product.wxs -arch x64 -d "Version=${{ env.VERSION }}" -ext WixToolset.UI.wixext -o "$env:GITHUB_WORKSPACE\dist\FontraPak-Windows-Installer.msi"
-
-      - name: List items in dist folder
-        run: dir dist
-
-      # Upload Windows artifacts together for SignPath signing
-      - name: Upload unsigned Windows artifacts for signing
-        id: upload-unsigned-windows
-        uses: actions/upload-artifact@v7
-        with:
-          name: unsigned-windows-artifacts
-          path: dist
-
-  windows-sign:
-    name: Sign Windows Artifacts
-    needs: windows-installer
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write   # Required for SignPath trusted build verification (OIDC)
-      actions: read     # Required for SignPath to read job details
-      contents: read    # Required for SignPath to download artifacts
-
-    steps:
-      - name: Submit to SignPath
-        id: signpath
-        uses: signpath/github-action-submit-signing-request@v2
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'fontra-pak'
-          signing-policy-slug: 'test-signing'
-          github-artifact-id: '${{ needs.windows-installer.outputs.artifact-id }}'
-          wait-for-completion: true
-          output-artifact-directory: 'signed'
-
-      - name: List signed artifacts
-        run: ls -la signed/
-
-      - name: Upload signed portable zip
-        uses: actions/upload-artifact@v7
-        with:
-          name: FontraPak-Windows
-          path: signed/Fontra Pak.zip
-
-      - name: Upload signed MSI
-        uses: actions/upload-artifact@v7
-        with:
-          name: FontraPak-Windows-Installer
-          path: signed/FontraPak-Windows-Installer.msi
-
   create-github-release:
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
-    needs: [build-application, windows-sign]
+    needs: [build-application]
     if: github.ref_type == 'tag'
 
     steps:
@@ -231,10 +140,6 @@ jobs:
         with:
           path: ./downloaded-artifact
 
-      - name: Zip Windows .exe
-        run: |
-          cd ./downloaded-artifact/FontraPak-Windows
-          zip -r FontraPak-Windows.zip "Fontra Pak.exe"
 
       - name: Display structure of downloaded files
         run: ls -R
@@ -251,21 +156,13 @@ jobs:
           body_path: 'tmp_latest_changes.txt'
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            ./downloaded-artifact/FontraPak-MacOS/*.dmg
-            ./downloaded-artifact/FontraPak-Windows-Installer/*.msi
-            ./downloaded-artifact/FontraPak-Windows/*.zip
             ./downloaded-artifact/FontraPak-Ubuntu/*.tgz
 
-      - name: Update website / Repository Dispatch
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ secrets.WEBSITE_PAT }}
-          repository: fontra/fontra-website
-          event-type: release-event
 
       - name: Update flatpak / Repository Dispatch
+        continue-on-error: true
         uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.FLATPAK_PAT }}
-          repository: fontra/fontra-flatpak
+          repository: t4rik/fontrax-flatpak
           event-type: release-event

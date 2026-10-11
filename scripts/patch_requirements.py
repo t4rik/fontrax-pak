@@ -6,7 +6,7 @@ def patchRequirements(reqsPath, tag):
     reqsText = reqsPath.read_text()
     lines = reqsText.splitlines(keepends=True)
 
-    target = "git+https://github.com/fontra/fontra.git"
+    target = "git+https://github.com/t4rik/fontrax.git"
 
     newLines = []
     for line in lines:

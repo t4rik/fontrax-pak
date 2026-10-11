@@ -13,7 +13,7 @@ def parseTag(tag):
 
 
 def getLatestTag():
-    tagsURL = "https://api.github.com/repos/fontra/fontra/tags"
+    tagsURL = "https://api.github.com/repos/t4rik/fontrax/tags"
     tagsInfo = json.loads(downloadResource(tagsURL))
 
     tags = sorted([info["name"] for info in tagsInfo], key=parseTag)
